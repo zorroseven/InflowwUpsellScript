@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.png
+*_dump.txt
+after_*.txt
+out1.txt
+infloww_upsell_data.json
+infloww_tree_dump.txt
