@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UPSELL SCRIPT INFLOWW</title>
+<style>
+  :root {
+    --bg: #111318;
+    --panel: #1a1d24;
+    --panel-2: #20242c;
+    --border: #2a2e37;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --accent: #2dd4bf;
+    --accent-dark: #14b8a6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    /* Makes the native <select> popup render dark too - without it
+       Windows draws the option list light-on-white against this theme. */
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    padding: 16px 24px 20px;
+    gap: 18px;
+  }
+  .col-left {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* Last resort if the window is made very short - the model list
+       keeps its height instead of being squeezed to a single row. */
+    overflow-y: auto;
+  }
+  /* The model list is the thing you actually work in, so it takes the
+     slack. Everything else in this column is fixed-height, and without a
+     floor here the leftover space ran out and this collapsed to one row. */
+  #modelListPanel {
+    flex: 1 1 auto;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+  }
+  .col-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .list-bar {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  #listSelect {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 30px 9px 11px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5L6 6.5L11 1.5' stroke='%239ca3af' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+  }
+  #listSelect:focus { border-color: var(--accent); }
+  #listSelect:disabled { opacity: 0.4; cursor: default; }
+  .list-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .btn-mini {
+    flex: 1;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 6px 4px;
+    font-size: 11.5px;
+    border-radius: 7px;
+  }
+  .btn-mini:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+  .btn-mini-danger:hover:not(:disabled) { color: var(--red); border-color: var(--red); }
+
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .add-row-2 {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .add-row-2 button { flex: 1; padding: 8px; font-size: 12.5px; }
+  input[type=text] {
+    flex: 1;
+    min-width: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 11px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    outline: none;
+  }
+  input[type=text]:focus {
+    border-color: var(--accent);
+  }
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: filter 0.1s, opacity 0.1s;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.12); }
+  button:active:not(:disabled) { filter: brightness(0.95); }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-add { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); width: 100%; margin-bottom: 8px; text-align: left; padding: 9px 12px; }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--accent); }
+  .btn-start { background: var(--green); color: #06210f; font-weight: 600; }
+  /* A toggle, not an action: it stays on until switched off, and Start
+     is what actually does the work. */
+  /* Only shown when the last run left something behind. */
+  .btn-retry {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .btn-retry:hover:not(:disabled) { background: rgba(245, 158, 11, 0.10); }
+  .btn-retry.hidden { display: none; }
+
+  .btn-toggle.on {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(34, 197, 94, 0.10);
+    font-weight: 600;
+  }
+  .btn-stop { background: var(--panel-2); color: var(--red); border: 1px solid var(--red); }
+
+  .btn-bulk {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    padding: 9px 12px; white-space: nowrap;
+  }
+  .btn-bulk:hover:not(:disabled) { border-color: var(--accent); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    width: 420px; max-width: 90vw; padding: 18px;
+  }
+  .modal-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .modal-box p { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+  .modal-box textarea {
+    width: 100%; min-height: 160px; resize: vertical;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 10px; font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px; outline: none;
+  }
+  .modal-box textarea:focus { border-color: var(--accent); }
+  /* The run-finished dialog. Deliberately loud: Infloww is in front for
+     the whole run, so this is the only thing that says it is over. */
+  #doneModal .modal-box { border-color: var(--green); width: 460px; }
+  #doneTitle { font-size: 17px; margin-bottom: 10px; }
+  #doneBody {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    font-family: "Cascadia Code", Consolas, monospace;
+  }
+  #doneBody .done-row { display: flex; justify-content: space-between; gap: 14px; }
+  #doneBody .done-row span:last-child { color: var(--muted); }
+  #doneBody .ok   { color: var(--green); }
+  #doneBody .warn { color: var(--amber); }
+  #doneBody .err  { color: var(--red); }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .modal-actions button { flex: 1; padding: 10px; }
+  .btn-cancel { background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); }
+
+  #modelListWrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .model-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .model-row:hover { border-color: #3a404b; }
+  .model-row.selected {
+    border-color: var(--green);
+    background: rgba(34, 197, 94, 0.14);
+  }
+  .model-row .model-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+  }
+  .model-row .row-run,
+  .model-row .rm {
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .model-row .row-run { font-size: 11px; }
+  .model-row .rm { font-size: 15px; }
+  /* Revealed on hover so a 40-row list is not a wall of icons, but kept
+     visible while the row is selected. */
+  .model-row:hover .row-run,
+  .model-row:hover .rm,
+  .model-row.selected .row-run,
+  .model-row.selected .rm { opacity: 1; }
+  .model-row .row-run:hover { color: var(--green); background: rgba(34,197,94,0.12); }
+  .model-row .rm:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+  .sel-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 7px 9px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  .sel-bar.hidden { display: none; }
+  .sel-bar .sel-count { color: var(--green); white-space: nowrap; margin-right: auto; }
+  .sel-bar .btn-mini { flex: 0 0 auto; padding: 5px 8px; }
+
+  .ctx {
+    position: fixed;
+    z-index: 120;
+    min-width: 210px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+    font-size: 12.5px;
+  }
+  .ctx.hidden { display: none; }
+  .ctx-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .ctx-item:hover { background: var(--panel-2); }
+  .ctx-item.danger:hover { color: var(--red); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+  .empty-hint {
+    color: var(--muted);
+    font-size: 12.5px;
+    text-align: center;
+    padding: 30px 10px;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .action-row button { flex: 1; padding: 11px; font-size: 14px; }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  #logWrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #logWrap .panel-title {
+    padding: 8px 10px 8px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .btn-copy {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    padding: 6px 12px; font-size: 12px; text-transform: none; letter-spacing: normal;
+  }
+  .btn-copy:hover:not(:disabled) { border-color: var(--accent); }
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+  .l-header { color: var(--accent); font-weight: 600; margin-top: 6px; }
+  .l-ok { color: var(--green); }
+  .l-warn { color: var(--amber); }
+  .l-err { color: var(--red); }
+  .l-dim { color: var(--muted); }
+  /* A 🔴 PPV row. Bold here so the log shows the same emphasis the
+     Discord paste gets from its ** ** - the eye lands on the same rows
+     in both places. */
+  .l-suspect { color: var(--red); font-weight: 700; }
+
+  footer {
+    padding: 8px 24px 14px;
+    color: var(--muted);
+    font-size: 11.5px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  /* Kept in its own element so a status message never wipes the count,
+     and the count never truncates a long message. */
+  #footerText {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #selCounter {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+  }
+  #selCounter.has-selection { color: var(--green); font-weight: 600; }
+
+  /* Non-modal replacement for alert(). alert() cannot be used from the
+     Python side at all: pywebview's evaluate_js waits on the script to
+     return while alert() waits on a click, which deadlocks the calling
+     thread outright. See Api._error(). */
+  #toastWrap {
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--text);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+    cursor: pointer;
+    animation: toastIn 0.16s ease-out;
+    word-break: break-word;
+  }
+  .toast.err { border-left-color: var(--red); }
+  .toast.warn { border-left-color: var(--amber); }
+  .toast.ok { border-left-color: var(--green); }
+  .toast .toast-hint {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Upsell Script Infloww</h1>
+  <p>Pick a list, add model names or fetch them from Infloww, then hit Start. It switches models automatically and reads the first 3 PPVs from each.</p>
+</header>
+
+<main>
+  <div class="col-left">
+    <div class="list-bar">
+      <label class="list-label" for="listSelect">List</label>
+      <select id="listSelect" onchange="switchList(this.value)"></select>
+      <div class="list-actions">
+        <button class="btn-mini" id="newListBtn" onclick="newList()" title="Create a new, empty list">+ New</button>
+        <button class="btn-mini" id="renameListBtn" onclick="renameList()" title="Rename this list">Rename</button>
+        <button class="btn-mini" id="dupListBtn" onclick="duplicateList()" title="Copy this list into a new one">Duplicate</button>
+        <button class="btn-mini btn-mini-danger" id="deleteListBtn" onclick="deleteList()" title="Delete this list">Delete</button>
+      </div>
+    </div>
+    <div class="add-row">
+      <input type="text" id="modelSearch" placeholder="🔍 Search models..." autocomplete="off">
+    </div>
+    <div class="add-row-2">
+      <button class="btn-add" onclick="addModel()">Add one</button>
+      <button class="btn-bulk" onclick="openBulkModal()">+ Add multiple</button>
+    </div>
+    <div class="sel-bar hidden" id="selBar">
+      <span class="sel-count" id="selCount"></span>
+      <button class="btn-mini" onclick="runSelected()" title="Run only the selected models">▶ Run</button>
+      <button class="btn-mini" onclick="newListFromSelection()" title="Make a new list from the selected models">New list</button>
+      <button class="btn-mini" onclick="clearSelection()" title="Deselect everything">Clear</button>
+    </div>
+    <div class="panel" id="modelListPanel">
+      <div id="modelListWrap"><div class="empty-hint" id="emptyHint">Loading&hellip;</div></div>
+    </div>
+    <div style="margin-top:12px;">
+      <div class="add-row" style="margin-bottom:8px;">
+        <input type="text" id="scriptInput" placeholder="Target script (blank = first folder)" autocomplete="off">
+      </div>
+      <button class="btn-secondary" onclick="scriptSearch()" id="searchBtn" title="Look up this script for the selected model">🔍 Script Search</button>
+      <button class="btn-secondary btn-toggle" onclick="toggleScanAll()" id="scanBtn" title="When on, Start reads every priced PPV in each model's folder instead of the first 3">☐ Scan All PPVs</button>
+      <div class="add-row-2" style="margin-bottom:0;">
+        <button class="btn-secondary" onclick="selectAll()" id="selectAllBtn" style="width:auto; margin-bottom:0; text-align:center;">Select All</button>
+        <button class="btn-secondary" onclick="clearAll()" id="clearBtn" style="width:auto; margin-bottom:0; text-align:center;">Clear List</button>
+      </div>
+      <button class="btn-secondary btn-retry hidden" onclick="selectUnfinished()" id="retryBtn"
+              style="margin-top:8px; margin-bottom:0; text-align:center;"></button>
+    </div>
+    <div class="action-row">
+      <button class="btn-start" id="startBtn" onclick="startRun()">▶ Start</button>
+      <button class="btn-stop" id="stopBtn" onclick="stopRun()" disabled>■ Stop</button>
+    </div>
+    <div class="status-row">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Idle</span>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="panel" id="logWrap">
+      <div class="panel-title">
+        <span>Log</span>
+        <button class="btn-copy" id="copyBtn" onclick="copyForDiscord()" disabled>📋 Copy for Discord</button>
+      </div>
+      <div id="log"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span id="footerText">Ready.</span>
+  <span id="selCounter"></span>
+</footer>
+
+<div class="modal-overlay hidden" id="promptModal">
+  <div class="modal-box">
+    <h3 id="promptTitle"></h3>
+    <p id="promptMsg"></p>
+    <input type="text" id="promptInput" autocomplete="off" style="width:100%;">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePrompt(null)">Cancel</button>
+      <button class="btn-start" id="promptOk" onclick="submitPrompt()">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="doneModal">
+  <div class="modal-box">
+    <h3 id="doneTitle"></h3>
+    <div id="doneBody"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="doneCopyBtn" onclick="copyFromDoneDialog()">📋 Copy for Discord</button>
+      <button class="btn-start" onclick="closeDoneDialog()">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctx hidden" id="ctxMenu"></div>
+
+<div id="toastWrap"></div>
+
+<div class="modal-overlay hidden" id="bulkModal">
+  <div class="modal-box">
+    <h3>Add multiple models</h3>
+    <p>One name per line, or comma-separated. Duplicates already in your list are skipped.</p>
+    <textarea id="bulkText" placeholder="one name per line&#10;or comma, separated&#10;..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn-start" onclick="confirmBulkAdd()">Add All</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// `state` mirrors model_list.json: several named lists plus which one is
+// selected. Python owns it - every mutation goes through pywebview.api,
+// which validates, saves and hands the whole state back, and applyState()
+// re-renders from that. `models` is just the selected list's names, kept
+// as a plain array so the add/remove code below stays unchanged.
+let state = { version: 2, active: '', lists: [] };
+let models = [];
+
+function activeList() {
+  return state.lists.find(l => l.name === state.active) || state.lists[0] || null;
+}
+
+function applyState(newState) {
+  const previousActive = state.active;
+  state = newState || { version: 2, active: '', lists: [] };
+  const act = activeList();
+  models = act ? act.models.slice() : [];
+  // A selection only means anything within one list, so switching lists
+  // drops it. Saving the same list keeps it, otherwise selecting rows and
+  // hitting Remove would clear the highlight mid-action.
+  if (state.active !== previousActive) {
+    selected.clear();
+    lastClickedIndex = null;
+    // A filter typed for one list means nothing in the next one, and
+    // neither do leftovers from a run against a different list.
+    const box = document.getElementById('modelSearch');
+    if (box) box.value = '';
+    retryList = [];
+    renderRetryButton();
+  } else {
+    const present = new Set(models.map(keyOf));
+    for (const k of Array.from(selected)) if (!present.has(k)) selected.delete(k);
+  }
+  renderListSelect();
+  render();
+}
+
+function renderListSelect() {
+  const sel = document.getElementById('listSelect');
+  sel.innerHTML = '';
+  for (const l of state.lists) {
+    const opt = document.createElement('option');
+    opt.value = l.name;
+    opt.textContent = `${l.name} (${l.models.length})`;
+    if (l.name === state.active) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  // Nowhere to put models without at least one list, so the last one
+  // cannot be removed. Python enforces this too.
+  document.getElementById('deleteListBtn').disabled = state.lists.length <= 1;
+}
+
+async function persist() {
+  applyState(await pywebview.api.save_models(models));
+}
+
+async function switchList(name) {
+  applyState(await pywebview.api.set_active(name));
+  setFooter(`Switched to "${state.active}" (${models.length} model(s)).`);
+}
+
+async function newList() {
+  const name = await askName('New list', 'Give it a name you will recognise, e.g. "Tier 3 to Tier 1" or "VIP only".', '', 'Create');
+  if (name === null) return;
+  applyState(await pywebview.api.create_list(name));
+  setFooter(`Created "${state.active}". It starts empty.`);
+}
+
+async function renameList() {
+  const current = state.active;
+  const name = await askName('Rename list', `Rename "${current}" to:`, current, 'Rename');
+  if (name === null) return;
+  applyState(await pywebview.api.rename_list(current, name));
+  setFooter(`Renamed to "${state.active}".`);
+}
+
+async function duplicateList() {
+  const source = state.active;
+  applyState(await pywebview.api.duplicate_list(source));
+  setFooter(`Copied "${source}" into "${state.active}".`);
+}
+
+async function deleteList() {
+  const current = state.active;
+  if (state.lists.length <= 1) {
+    showToast('This is your only list - make another one first.', 'warn');
+    return;
+  }
+  const ok = await askConfirm('Delete list',
+    `Delete "${current}" and the ${models.length} model name(s) in it? This cannot be undone.`,
+    'Delete');
+  if (!ok) return;
+  applyState(await pywebview.api.delete_list(current));
+  setFooter(`Deleted "${current}". Now on "${state.active}".`);
+}
+
+// --- selection inside the current list ---------------------------------
+// Held as lowercased names rather than row indices: names are unique
+// (everything is de-duplicated case-insensitively) and survive a removal
+// shifting the rows underneath, which indices would not.
+let selected = new Set();
+let lastClickedIndex = null;
+let isRunning = false;
+
+function keyOf(name) { return String(name).trim().toLowerCase(); }
+function isSelected(name) { return selected.has(keyOf(name)); }
+function selectedNames() { return models.filter(isSelected); }
+
+function clearSelection() {
+  selected.clear();
+  lastClickedIndex = null;
+  render();
+}
+
+// The rows on screen when a filter is typed, each carrying its real
+// position in `models`. Everything that mutates the list works off that
+// real index - filtering must never make Remove delete the wrong row.
+function visibleModels() {
+  const box = document.getElementById('modelSearch');
+  const q = (box ? box.value : '').trim().toLowerCase();
+  const out = [];
+  models.forEach((name, index) => {
+    if (!q || name.toLowerCase().includes(q)) out.push({ name, index });
+  });
+  return out;
+}
+
+function onRowClick(e, index, pos) {
+  if (isRunning) return;
+  const vis = visibleModels();
+  const lastPos = lastClickedIndex === null
+    ? -1 : vis.findIndex(v => v.index === lastClickedIndex);
+
+  if (e.shiftKey && lastPos !== -1) {
+    // Shift+click takes the whole span, which is how you grab a tier that
+    // sits together in the list without clicking every row. Ranges run
+    // over what is visible, so a filtered span selects only those rows.
+    const a = Math.min(lastPos, pos);
+    const b = Math.max(lastPos, pos);
+    for (let j = a; j <= b; j++) selected.add(keyOf(vis[j].name));
+  } else {
+    const k = keyOf(models[index]);
+    if (selected.has(k)) selected.delete(k); else selected.add(k);
+    lastClickedIndex = index;
+  }
+  render();
+}
+
+function onRowContextMenu(e, index) {
+  e.preventDefault();
+  if (isRunning) return;
+  // Right-clicking a row that is not part of the selection acts on that
+  // row alone, rather than silently running a selection you had forgotten
+  // about somewhere further up the list.
+  if (!isSelected(models[index])) {
+    selected.clear();
+    selected.add(keyOf(models[index]));
+    lastClickedIndex = index;
+    render();
+  }
+  openContextMenu(e.clientX, e.clientY);
+}
+
+function render() {
+  const wrap = document.getElementById('modelListWrap');
+  const box = document.getElementById('modelSearch');
+  const query = (box ? box.value : '').trim();
+  wrap.innerHTML = '';
+
+  if (models.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.innerHTML = 'No models yet.<br>Click "Add one" to add a model.';
+    wrap.appendChild(hint);
+    updateSelectionUI();
+    return;
+  }
+
+  const vis = visibleModels();
+  if (vis.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.textContent = `No model matches "${query}".`;
+    wrap.appendChild(hint);
+    updateSelectionUI();
+    return;
+  }
+
+  vis.forEach(({ name: m, index: i }, pos) => {
+    const row = document.createElement('div');
+    row.className = 'model-row' + (isSelected(m) ? ' selected' : '');
+    row.addEventListener('click', (e) => onRowClick(e, i, pos));
+    row.addEventListener('contextmenu', (e) => onRowContextMenu(e, i));
+
+    const label = document.createElement('span');
+    label.className = 'model-name';
+    label.textContent = m;
+    row.appendChild(label);
+
+    const actions = document.createElement('span');
+    actions.className = 'row-actions';
+
+    const run = document.createElement('span');
+    run.className = 'row-run';
+    run.textContent = '▶';
+    run.title = `Run only "${m}"`;
+    run.addEventListener('click', (e) => { e.stopPropagation(); runModels([m]); });
+    actions.appendChild(run);
+
+    const rm = document.createElement('span');
+    rm.className = 'rm';
+    rm.textContent = '×';
+    rm.title = `Remove "${m}" from this list`;
+    rm.addEventListener('click', (e) => { e.stopPropagation(); removeModel(i); });
+    actions.appendChild(rm);
+
+    row.appendChild(actions);
+    wrap.appendChild(row);
+  });
+
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  const names = selectedNames();
+  const bar = document.getElementById('selBar');
+  bar.classList.toggle('hidden', names.length === 0);
+  document.getElementById('selCount').textContent = `${names.length} selected`;
+
+  // Start follows the selection, so "run these three" is one click rather
+  // than a separate button you have to notice.
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = names.length ? `▶ Start (${names.length} selected)` : '▶ Start';
+
+  // Flips to Deselect All once everything on screen is picked, so the
+  // same button undoes it.
+  const vis = visibleModels();
+  const btn = document.getElementById('selectAllBtn');
+  if (btn) {
+    const allOn = vis.length > 0 && vis.every(v => isSelected(v.name));
+    btn.textContent = allOn ? 'Deselect All' : 'Select All';
+  }
+
+  // Running count in the status bar, so it is visible while picking
+  // models without having to read the selection bar.
+  const counter = document.getElementById('selCounter');
+  if (counter) {
+    counter.textContent = `${names.length}/${models.length} selected`;
+    counter.classList.toggle('has-selection', names.length > 0);
+  }
+}
+
+// --- right-click menu ---------------------------------------------------
+
+function closeContextMenu() {
+  document.getElementById('ctxMenu').classList.add('hidden');
+}
+
+function openContextMenu(x, y) {
+  const menu = document.getElementById('ctxMenu');
+  const names = selectedNames();
+  const n = names.length;
+  const only = n === 1 ? `"${names[0]}"` : `${n} models`;
+
+  const items = [
+    { label: `▶ Run ${only}`, action: () => runModels(names) },
+  ];
+  if (n === 1) {
+    items.push({ label: `🔍 Script search in "${names[0]}"`,
+                 action: () => scriptSearch(names[0]) });
+  }
+  items.push(
+    { label: `New list from ${n === 1 ? 'this' : 'these ' + n}…`, action: newListFromSelection },
+    { sep: true },
+    { label: `Remove ${only} from this list`, action: removeSelected, danger: true },
+    { label: 'Clear selection', action: clearSelection },
+  );
+
+  menu.innerHTML = '';
+  for (const item of items) {
+    if (item.sep) {
+      const sep = document.createElement('div');
+      sep.className = 'ctx-sep';
+      menu.appendChild(sep);
+      continue;
+    }
+    const el = document.createElement('div');
+    el.className = 'ctx-item' + (item.danger ? ' danger' : '');
+    el.textContent = item.label;
+    el.addEventListener('click', () => { closeContextMenu(); item.action(); });
+    menu.appendChild(el);
+  }
+
+  // Place it, then nudge back inside the window if it would overflow.
+  menu.classList.remove('hidden');
+  menu.style.left = '0px';
+  menu.style.top = '0px';
+  const r = menu.getBoundingClientRect();
+  const left = Math.max(6, Math.min(x, window.innerWidth - r.width - 6));
+  const top = Math.max(6, Math.min(y, window.innerHeight - r.height - 6));
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#ctxMenu')) closeContextMenu();
+});
+document.addEventListener('contextmenu', (e) => {
+  if (!e.target.closest('.model-row')) closeContextMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeContextMenu();
+});
+window.addEventListener('blur', closeContextMenu);
+document.getElementById('modelListWrap').addEventListener('scroll', closeContextMenu);
+
+// --- selection actions --------------------------------------------------
+
+async function removeSelected() {
+  const doomed = new Set(selectedNames().map(keyOf));
+  if (!doomed.size) return;
+  models = models.filter(m => !doomed.has(keyOf(m)));
+  selected.clear();
+  lastClickedIndex = null;
+  render();
+  await persist();
+}
+
+async function newListFromSelection() {
+  const names = selectedNames();
+  if (!names.length) return;
+  const label = await askName(
+    'New list from selection',
+    `Create a list containing: ${names.join(', ')}`,
+    '', 'Create');
+  if (label === null) return;
+  applyState(await pywebview.api.create_list_with(label, names));
+  setFooter(`Created "${state.active}" with ${models.length} model(s).`);
+}
+
+function runSelected() {
+  runModels(selectedNames());
+}
+
+// Which model a script search runs against: the selected row, or the
+// only model in the list if nothing is selected.
+function searchTargetModel() {
+  const sel = selectedNames();
+  if (sel.length === 1) return sel[0];
+  if (sel.length === 0 && models.length === 1) return models[0];
+  return null;
+}
+
+// Look up one named script folder for one model and print its stats,
+// instead of letting the run pick a folder for you. Appends to the log
+// rather than clearing it, so several searches can be compared.
+async function scriptSearch(presetModel) {
+  if (isRunning) return;
+  closeContextMenu();
+
+  const input = document.getElementById('scriptInput');
+  const query = input.value.trim();
+  if (!query) {
+    showToast('Type a script name first, e.g. "main ramp".', 'warn');
+    input.focus();
+    return;
+  }
+
+  const model = presetModel || searchTargetModel();
+  if (!model) {
+    showToast(models.length
+      ? 'Click a model in the list first, so it knows which one to search.'
+      : 'Add a model to the list first.', 'warn');
+    return;
+  }
+
+  setRunning(true);
+  document.getElementById('copyBtn').disabled = false;
+  await pywebview.api.script_search(model, query);
+}
+
+document.getElementById('scriptInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') scriptSearch();
+});
+
+// A mode, not an action. While on, Start reads every priced PPV in each
+// model's folder instead of stopping at the first three - so it applies
+// to a whole list in one run, not one model at a time.
+let scanAllMode = false;
+
+function toggleScanAll() {
+  if (isRunning) return;
+  scanAllMode = !scanAllMode;
+  renderScanToggle();
+  setFooter(scanAllMode
+    ? 'Scan All PPVs is ON — Start will read every PPV for each model.'
+    : 'Scan All PPVs is off — Start reads the first 3 PPVs.');
+}
+
+function renderScanToggle() {
+  const btn = document.getElementById('scanBtn');
+  btn.classList.toggle('on', scanAllMode);
+  btn.textContent = (scanAllMode ? '☑' : '☐') + ' Scan All PPVs';
+}
+
+// In-page modal used instead of the browser's prompt()/confirm(). Those
+// are blocking dialogs owned by WebView2, and this app must never have a
+// modal open while a background thread is pushing log lines in - see
+// Api._error() on the Python side for what that costs.
+let _promptResolve = null;
+
+function _openPrompt(title, message, initial, okLabel, withInput) {
+  const modal = document.getElementById('promptModal');
+  document.getElementById('promptTitle').textContent = title;
+  document.getElementById('promptMsg').textContent = message;
+  document.getElementById('promptOk').textContent = okLabel || 'OK';
+  const input = document.getElementById('promptInput');
+  input.style.display = withInput ? '' : 'none';
+  input.value = initial || '';
+  modal.classList.remove('hidden');
+  if (withInput) { input.focus(); input.select(); }
+  return new Promise(resolve => { _promptResolve = resolve; });
+}
+
+function closePrompt(value) {
+  document.getElementById('promptModal').classList.add('hidden');
+  const resolve = _promptResolve;
+  _promptResolve = null;
+  if (resolve) resolve(value);
+}
+
+function submitPrompt() {
+  const input = document.getElementById('promptInput');
+  if (input.style.display === 'none') { closePrompt(true); return; }
+  const value = input.value.trim();
+  if (!value) { input.focus(); return; }
+  closePrompt(value);
+}
+
+function askName(title, message, initial, okLabel) {
+  return _openPrompt(title, message, initial, okLabel, true);
+}
+
+async function askConfirm(title, message, okLabel) {
+  return (await _openPrompt(title, message, '', okLabel, false)) === true;
+}
+
+document.getElementById('promptInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitPrompt();
+  if (e.key === 'Escape') closePrompt(null);
+});
+
+document.getElementById('promptModal').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePrompt(null);
+});
+
+// Adding is a deliberate action now - the field at the top of the column
+// filters the list instead of feeding this.
+async function addModel() {
+  if (isRunning) return;
+  const name = await askName('Add a model',
+    'Type the name exactly as it appears in Infloww.', '', 'Add');
+  if (name === null) return;
+  const clean = name.trim();
+  if (!clean) return;
+  if (models.some(m => m.toLowerCase() === clean.toLowerCase())) {
+    showToast(`"${clean}" is already in the list.`, 'warn');
+    return;
+  }
+  models.push(clean);
+  render();
+  await persist();
+  setFooter(`Added "${clean}".`);
+}
+
+function openBulkModal() {
+  document.getElementById('bulkText').value = '';
+  document.getElementById('bulkModal').classList.remove('hidden');
+  document.getElementById('bulkText').focus();
+}
+
+function closeBulkModal() {
+  document.getElementById('bulkModal').classList.add('hidden');
+}
+
+async function confirmBulkAdd() {
+  const raw = document.getElementById('bulkText').value;
+  const parts = raw.split(/[\n,]/).map(s => s.trim()).filter(s => s.length > 0);
+  const existingLower = new Set(models.map(m => m.toLowerCase()));
+  let addedCount = 0;
+  for (const name of parts) {
+    if (!existingLower.has(name.toLowerCase())) {
+      models.push(name);
+      existingLower.add(name.toLowerCase());
+      addedCount++;
+    }
+  }
+  render();
+  await persist();
+  closeBulkModal();
+  setFooter(`Added ${addedCount} model(s) (${parts.length - addedCount} duplicate/skipped).`);
+}
+
+async function removeModel(i) {
+  models.splice(i, 1);
+  render();
+  await persist();
+}
+
+async function clearAll() {
+  if (models.length) {
+    const ok = await askConfirm('Clear list',
+      `Remove all ${models.length} model name(s) from "${state.active}"? The list itself stays.`,
+      'Clear');
+    if (!ok) return;
+  }
+  models = [];
+  render();
+  await persist();
+  setFooter(`Cleared "${state.active}".`);
+}
+
+document.getElementById('modelSearch').addEventListener('input', () => {
+  render();
+  const box = document.getElementById('modelSearch');
+  const q = box.value.trim();
+  const vis = visibleModels();
+  setFooter(q ? `${vis.length} of ${models.length} model(s) match "${q}".`
+              : `${models.length} model(s) in "${state.active}".`);
+});
+
+document.getElementById('modelSearch').addEventListener('keydown', (e) => {
+  const box = document.getElementById('modelSearch');
+  if (e.key === 'Escape') {
+    box.value = '';
+    render();
+    setFooter(`${models.length} model(s) in "${state.active}".`);
+    return;
+  }
+  if (e.key !== 'Enter') return;
+  // Enter adds the matches to the selection - it does not replace it.
+  // Clearing first meant searching for a second model silently dropped
+  // the first, so the count never went past 1. Adding lets you build a
+  // selection by typing one name after another.
+  const vis = visibleModels();
+  if (vis.length === 0) return;
+  for (const v of vis) selected.add(keyOf(v.name));
+  lastClickedIndex = vis[vis.length - 1].index;
+  // Emptied so the next name can be typed straight away, and so the
+  // whole list is visible again to show what is now selected.
+  box.value = '';
+  render();
+  const total = selectedNames().length;
+  setFooter(vis.length === 1
+    ? `Added "${vis[0].name}" — ${total} selected.`
+    : `Added ${vis.length} matching model(s) — ${total} selected.`);
+});
+
+document.getElementById('bulkText').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeBulkModal();
+  if (e.key === 'Enter' && e.ctrlKey) confirmBulkAdd();
+});
+
+function appendLog(text, cls) {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setRunning(running) {
+  isRunning = running;
+  if (running) closeContextMenu();
+  document.getElementById('startBtn').disabled = running;
+  document.getElementById('stopBtn').disabled = !running;
+  document.getElementById('selectAllBtn').disabled = running;
+  document.getElementById('retryBtn').disabled = running;
+  document.getElementById('searchBtn').disabled = running;
+  document.getElementById('scanBtn').disabled = running;
+  document.getElementById('scriptInput').disabled = running;
+  document.getElementById('clearBtn').disabled = running;
+  // Switching or deleting the list mid-run would leave the log describing
+  // one list while the worker is still working through another.
+  for (const id of ['listSelect', 'newListBtn', 'renameListBtn', 'dupListBtn', 'deleteListBtn']) {
+    document.getElementById(id).disabled = running;
+  }
+  for (const id of ['selBar']) {
+    document.getElementById(id).style.pointerEvents = running ? 'none' : '';
+  }
+  if (!running) { renderListSelect(); updateSelectionUI(); }
+  document.getElementById('statusDot').className = 'status-dot' + (running ? ' running' : '');
+  document.getElementById('statusText').textContent = running ? 'Running...' : 'Idle';
+}
+
+function setFooter(text) {
+  document.getElementById('footerText').textContent = text;
+}
+
+// Shown by Python when a run ends. `rows` is [[label, value, kind], ...].
+// Not a browser alert(): those block the page, and Python is still on the
+// other end of this call - see Api._error() for what that costs.
+function showDoneDialog(title, rows) {
+  document.getElementById('doneTitle').textContent = title;
+  const body = document.getElementById('doneBody');
+  body.innerHTML = '';
+  for (const [label, value, kind] of (rows || [])) {
+    const row = document.createElement('div');
+    row.className = 'done-row' + (kind ? ' ' + kind : '');
+    const l = document.createElement('span');
+    l.textContent = label;
+    const v = document.createElement('span');
+    v.textContent = value === null || value === undefined ? '' : String(value);
+    row.appendChild(l);
+    row.appendChild(v);
+    body.appendChild(row);
+  }
+  document.getElementById('doneCopyBtn').style.display = discordText ? '' : 'none';
+  document.getElementById('doneModal').classList.remove('hidden');
+}
+
+function closeDoneDialog() {
+  document.getElementById('doneModal').classList.add('hidden');
+}
+
+async function copyFromDoneDialog() {
+  await copyForDiscord();
+  const btn = document.getElementById('doneCopyBtn');
+  const original = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => { btn.textContent = original; }, 1500);
+}
+
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('doneModal');
+  if (!modal.classList.contains('hidden') && (e.key === 'Escape' || e.key === 'Enter')) {
+    closeDoneDialog();
+  }
+});
+
+// Called from Python in place of alert(). Must never block: see the
+// #toastWrap comment above and Api._error() on the Python side.
+function showToast(text, kind, ms) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'err');
+  el.textContent = text;
+  const hint = document.createElement('span');
+  hint.className = 'toast-hint';
+  hint.textContent = 'click to dismiss';
+  el.appendChild(hint);
+  const remove = () => { if (el.parentNode) el.parentNode.removeChild(el); };
+  el.addEventListener('click', remove);
+  wrap.appendChild(el);
+  setTimeout(remove, ms || 9000);
+}
+
+let discordText = '';
+
+function num(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function money(n) {
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function padR(s, w) { s = String(s); return s.length >= w ? s : s + ' '.repeat(w - s.length); }
+function padL(s, w) { s = String(s); return s.length >= w ? s : ' '.repeat(w - s.length) + s; }
+
+function addDiscordResult(modelName, ppvs, summary, folder) {
+  // Discord markdown (not a code block): ** only renders as bold outside
+  // one, so low-buyrate rows get bolded numbers plus a Suspect marker.
+  // Header numbers are the folder's own totals across every script in it,
+  // not a sum of the listed PPVs - see summarize_ppvs().
+  // The folder is named because the numbers only mean something next to
+  // the script they came from - two folders for the same model can look
+  // nothing alike.
+  const scope = summary.script_count ? summary.script_count + ' scripts' : 'all scripts';
+  let block = '';
+  block += '**' + modelName + '**'
+        + (folder ? ' — `' + folder + '`' : '')
+        + ' — Total Buyrate ' + num(summary.total_buyrate).toFixed(2) + '% '
+        + (summary.rating || '')
+        + ' — Earnings ' + money(num(summary.total_earnings))
+        + ' (' + scope + ')\n';
+  for (const p of ppvs) {
+    const rate = (p.purchase_rate_pct !== null && p.purchase_rate_pct !== undefined)
+      ? num(p.purchase_rate_pct).toFixed(2) + '%' : 'n/a';
+    const stats = p.sent + ' sends · ' + p.purchased + ' buys · '
+                + money(num(p.price)) + ' · ' + rate;
+    if (p.rating === '🔴') {
+      block += '🔴 `' + (p.label || '') + '` — **' + stats + '** <-- Suspect\n';
+    } else {
+      block += (p.rating || '') + ' `' + (p.label || '') + '` — ' + stats + '\n';
+    }
+  }
+  block += '\n';
+
+  discordText += block;
+  document.getElementById('copyBtn').disabled = false;
+  // Saved with the log, so it survives the app being closed.
+  try { pywebview.api.save_discord(discordText); } catch (e) {}
+}
+
+async function copyForDiscord() {
+  // No code block: ** bold and the Suspect marker only render as markdown
+  // outside one.
+  const payload = discordText.trimEnd();
+  try {
+    await navigator.clipboard.writeText(payload);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = payload;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  const btn = document.getElementById('copyBtn');
+  const original = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => { btn.textContent = original; }, 1500);
+}
+
+// Single entry point for every way of starting a run - the Start button,
+// the per-row play button, "Run" in the selection bar and the right-click
+// menu all end up here. Python's start() takes whatever list of names it
+// is handed, so running a subset needs nothing special on that side.
+async function runModels(names) {
+  if (isRunning) return;
+  names = (names || []).filter(n => n && n.trim());
+  if (names.length === 0) {
+    showToast('Nothing to run - add a model name, or select some first.', 'warn');
+    return;
+  }
+  closeContextMenu();
+  document.getElementById('log').innerHTML = '';
+  discordText = '';
+  document.getElementById('copyBtn').disabled = true;
+  // A new run replaces what was kept from last time.
+  try { await pywebview.api.clear_session(); } catch (e) {}
+  setRunning(true);
+  const scope = names.length === models.length
+    ? `list "${state.active}" — all ${names.length} model(s)`
+    : `${names.length} of ${models.length} from "${state.active}": ${names.join(', ')}`;
+  appendLog(`Running ${scope}.`, 'l-dim');
+  // Anything typed in the script box targets that folder for every model.
+  // Empty means the usual rule: first folder holding enough PPVs.
+  const target = document.getElementById('scriptInput').value.trim();
+  if (scanAllMode) appendLog('Scan All PPVs: ON', 'l-dim');
+  await pywebview.api.start(names, target || null, scanAllMode);
+}
+
+async function startRun() {
+  // With a selection active, Start runs just those - matching the label,
+  // which reads "Start (3 selected)".
+  const chosen = selectedNames();
+  await runModels(chosen.length ? chosen : models);
+}
+
+async function stopRun() {
+  appendLog('>> Stop requested, will halt after the current model...', 'l-warn');
+  await pywebview.api.stop();
+}
+
+// The models the last run did not finish - failed, not found, missing the
+// target folder, or never reached because it was stopped. Python sends
+// this at the end of every run.
+let retryList = [];
+
+function setRetryList(names) {
+  retryList = (names || []).filter(n => models.some(m => keyOf(m) === keyOf(n)));
+  renderRetryButton();
+}
+
+function renderRetryButton() {
+  const btn = document.getElementById('retryBtn');
+  if (!btn) return;
+  btn.classList.toggle('hidden', retryList.length === 0);
+  btn.textContent = `↻ Select the ${retryList.length} that didn't finish`;
+}
+
+// Deselects everything that completed and selects only the leftovers, so
+// a retry - usually with a different target folder - is one click away.
+function selectUnfinished() {
+  if (isRunning || retryList.length === 0) return;
+  selected.clear();
+  for (const name of retryList) selected.add(keyOf(name));
+  lastClickedIndex = null;
+  // Clear any filter, or the leftovers could be selected but hidden.
+  const box = document.getElementById('modelSearch');
+  if (box) box.value = '';
+  render();
+  setFooter(`Selected the ${retryList.length} model(s) that didn't finish: ${retryList.join(', ')}`);
+}
+
+// Selects every model currently shown - so with a filter typed it takes
+// the matches, and with the box empty it takes the whole list. Clicking
+// again when they are all selected clears them.
+function selectAll() {
+  if (isRunning) return;
+  const vis = visibleModels();
+  if (vis.length === 0) return;
+
+  const allSelected = vis.every(v => isSelected(v.name));
+  for (const v of vis) {
+    if (allSelected) selected.delete(keyOf(v.name));
+    else selected.add(keyOf(v.name));
+  }
+  lastClickedIndex = vis[vis.length - 1].index;
+  render();
+  setFooter(allSelected
+    ? 'Selection cleared.'
+    : `Selected ${vis.length} model(s) — Start runs just these.`);
+}
+
+window.addEventListener('pywebviewready', async () => {
+  // Tells the startup watchdog the page is alive. If this never fires,
+  // WebView2 deadlocked during init and Python relaunches the app.
+  pywebview.api.ui_ready();
+  applyState(await pywebview.api.get_state());
+
+  // Put the last run's results back, so closing the app before copying
+  // them to Discord does not lose them.
+  try {
+    const session = await pywebview.api.get_session();
+    if (session && session.lines && session.lines.length) {
+      appendLog('— from the last time the app was open —', 'l-dim');
+      for (const [text, cls] of session.lines) appendLog(text, cls);
+      appendLog('—'.repeat(50), 'l-dim');
+    }
+    if (session && session.discord) {
+      discordText = session.discord;
+      document.getElementById('copyBtn').disabled = false;
+    }
+  } catch (e) { /* nothing saved yet */ }
+
+  setFooter(`Ready. ${state.lists.length} list(s), "${state.active}" selected.`);
+});
+</script>
+</body>
+</html>

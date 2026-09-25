@@ -6,3 +6,10 @@ after_*.txt
 out1.txt
 infloww_upsell_data.json
 infloww_tree_dump.txt
+model_list.json
+upsell_gui.log
+upsell_gui.log.1
+@AutomationLog.txt
+build/
+dist/
+last_session.json
